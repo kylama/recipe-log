@@ -1,3 +1,6 @@
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+
 @import "tailwindcss";
 
 :root {
@@ -10,6 +13,41 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-sage-50: #f9faf9;
+  --color-sage-100: #f2f6f2;
+  --color-sage-200: #e8f0e8;
+  --color-sage-300: #d6e4d6;
+  --color-sage-400: #c0d4c0;
+  --color-sage-500: #a8c3a8;
+  --color-sage-600: #8fb08f;
+  --color-sage-700: #6b8a6b;
+  --color-sage-800: #4a5f4a;
+  --color-sage-900: #2d3a2d;
+
+  --color-cream-50: #fefefe;
+  --color-cream-100: #fdfcfa;
+  --color-cream-200: #fbf8f3;
+  --color-cream-300: #f8f2ea;
+  --color-cream-400: #f4eadd;
+  --color-cream-500: #efe0cd;
+  --color-cream-600: #e8d4b8;
+  --color-cream-700: #dfc49a;
+  --color-cream-800: #c9a876;
+  --color-cream-900: #a08652;
+}
+
+@theme {
+  --color-rose-50: #fdf2f2;
+  --color-rose-100: #fce7e7;
+  --color-rose-200: #f9d5d5;
+  --color-rose-300: #f4b6b6;
+  --color-rose-400: #ec8989;
+  --color-rose-500: #e06161;
+  --color-rose-600: #cd4545;
+  --color-rose-700: #ab3737;
+  --color-rose-800: #8e3131;
+  --color-rose-900: #762e2e;
 }
 
 @media (prefers-color-scheme: dark) {
