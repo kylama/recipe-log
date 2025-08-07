@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RecipeForm from '@/components/RecipeForm'
 import RecipeList from '@/components/RecipeList'
 import Sidebar from '@/components/Sidebar'
@@ -11,8 +11,25 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Check if we're coming from a recipe operation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const refreshParam = urlParams.get('refresh')
+    const operation = urlParams.get('operation')
+    
+    if (refreshParam || operation) {
+      console.log('Detected recipe operation, triggering refresh...')
+      setRefreshKey(prev => prev + 1)
+      
+      // Clean up the URL
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+    }
+  }, [])
+
   const handleRecipeAdded = () => {
     // Force refresh of recipe list and close form
+    console.log('Recipe added, refreshing list...')
     setRefreshKey(prev => prev + 1)
     setShowForm(false)
   }
@@ -23,6 +40,12 @@ export default function Home() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
+  }
+
+  // Function to trigger refresh from other components
+  const triggerRefresh = () => {
+    console.log('Triggering refresh from home page...')
+    setRefreshKey(prev => prev + 1)
   }
 
   return (
@@ -38,7 +61,7 @@ export default function Home() {
         {/* Page Content */}
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
-            <RecipeList key={refreshKey} searchQuery={searchQuery} />
+            <RecipeList key={refreshKey} searchQuery={searchQuery} refreshTrigger={refreshKey} />
           </div>
 
           {/* Floating Add Button */}

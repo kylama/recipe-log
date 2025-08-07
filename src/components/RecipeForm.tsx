@@ -1,13 +1,23 @@
 'use client'
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
+import { supabase, Recipe } from '@/lib/supabase'
 
 interface RecipeFormProps {
-  onRecipeAdded: () => void
+  onRecipeAdded?: () => void
+  onRecipeUpdated?: () => void
+  onCancel?: () => void
+  recipe?: Recipe // For editing mode
+  isEditMode?: boolean
 }
 
-export default function RecipeForm({ onRecipeAdded }: RecipeFormProps) {
+export default function RecipeForm({ 
+  onRecipeAdded, 
+  onRecipeUpdated, 
+  onCancel, 
+  recipe, 
+  isEditMode = false 
+}: RecipeFormProps) {
   const [formData, setFormData] = useState({
     title: '',
     ingredients: '',
@@ -20,8 +30,33 @@ export default function RecipeForm({ onRecipeAdded }: RecipeFormProps) {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Initialize form data when editing
+  useEffect(() => {
+    if (recipe && isEditMode) {
+      setFormData({
+        title: recipe.title,
+        ingredients: recipe.ingredients.join('\n'),
+        directions: recipe.directions,
+        image_url: recipe.image_url || '',
+        cook_time: recipe.cook_time?.toString() || '',
+        servings: recipe.servings?.toString() || ''
+      })
+      // Set image preview if recipe has an image
+      if (recipe.image_url) {
+        setImagePreview(recipe.image_url)
+      }
+    }
+  }, [recipe, isEditMode])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!supabase) {
+      console.error('Supabase client is missing')
+      alert('Supabase configuration is missing. Please check your environment variables.')
+      return
+    }
+    
     setIsSubmitting(true)
 
     try {
@@ -33,38 +68,99 @@ export default function RecipeForm({ onRecipeAdded }: RecipeFormProps) {
       // Use the image preview (data URL) if an image was uploaded
       const imageUrl = imagePreview || formData.image_url || null
 
-      const { error } = await supabase
-        .from('recipes')
-        .insert([
-          {
+      if (isEditMode && recipe) {
+        // Update existing recipe
+        console.log('Attempting to update recipe:', recipe.id, { formData, imageUrl })
+        
+        // First, let's verify the recipe exists
+        const { data: existingRecipe, error: fetchError } = await supabase
+          .from('recipes')
+          .select('*')
+          .eq('id', recipe.id)
+          .single()
+
+        if (fetchError) {
+          console.error('Error fetching recipe before update:', fetchError)
+          throw fetchError
+        }
+
+        console.log('Recipe found before update:', existingRecipe)
+        
+        const { error } = await supabase
+          .from('recipes')
+          .update({
             title: formData.title,
             ingredients: ingredientsArray,
             directions: formData.directions,
             image_url: imageUrl,
             cook_time: formData.cook_time ? parseInt(formData.cook_time) : null,
             servings: formData.servings ? parseInt(formData.servings) : null
-          }
-        ])
+          })
+          .eq('id', recipe.id)
 
-      if (error) throw error
+        if (error) {
+          console.error('Supabase update error:', error)
+          throw error
+        }
 
-      // Reset form
-      setFormData({
-        title: '',
-        ingredients: '',
-        directions: '',
-        image_url: '',
-        cook_time: '',
-        servings: ''
-      })
-      setImageFile(null)
-      setImagePreview('')
+        console.log('Recipe updated successfully')
+        
+        // Verify update
+        const { data: updatedRecipe, error: verifyError } = await supabase
+          .from('recipes')
+          .select('*')
+          .eq('id', recipe.id)
+          .single()
 
-      onRecipeAdded()
-      alert('Recipe added successfully!')
+        if (verifyError) {
+          console.error('Error verifying update:', verifyError)
+        } else {
+          console.log('Recipe after update:', updatedRecipe)
+        }
+        
+        onRecipeUpdated?.()
+        alert('Recipe updated successfully!')
+      } else {
+        // Add new recipe
+        console.log('Attempting to add new recipe:', { formData, imageUrl })
+        const { error } = await supabase
+          .from('recipes')
+          .insert([
+            {
+              title: formData.title,
+              ingredients: ingredientsArray,
+              directions: formData.directions,
+              image_url: imageUrl,
+              cook_time: formData.cook_time ? parseInt(formData.cook_time) : null,
+              servings: formData.servings ? parseInt(formData.servings) : null
+            }
+          ])
+
+        if (error) {
+          console.error('Supabase insert error:', error)
+          throw error
+        }
+
+        console.log('Recipe added successfully')
+
+        // Reset form only for new recipes
+        setFormData({
+          title: '',
+          ingredients: '',
+          directions: '',
+          image_url: '',
+          cook_time: '',
+          servings: ''
+        })
+        setImageFile(null)
+        setImagePreview('')
+
+        onRecipeAdded?.()
+        alert('Recipe added successfully!')
+      }
     } catch (error) {
-      console.error('Error adding recipe:', error)
-      alert('Error adding recipe. Please try again.')
+      console.error('Error saving recipe:', error)
+      alert(`Error ${isEditMode ? 'updating' : 'adding'} recipe. Please try again.`)
     } finally {
       setIsSubmitting(false)
     }
@@ -99,8 +195,6 @@ export default function RecipeForm({ onRecipeAdded }: RecipeFormProps) {
 
   return (
     <div>
-      {/* Title is now handled by the modal header */}
-      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-sage-900 mb-1">
@@ -228,13 +322,34 @@ export default function RecipeForm({ onRecipeAdded }: RecipeFormProps) {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-sage-600 text-white py-2 px-4 rounded-md hover:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? 'Adding Recipe...' : 'Add Recipe'}
-        </button>
+        {/* Button layout for edit mode vs add mode */}
+        {isEditMode ? (
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 bg-sage-600 text-white px-4 py-2 rounded-md hover:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-sage-600 text-white py-2 px-4 rounded-md hover:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Adding Recipe...' : 'Add Recipe'}
+          </button>
+        )}
       </form>
     </div>
   )
