@@ -32,7 +32,7 @@ export default function Sidebar() {
   ]
 
   return (
-    <div className={`bg-sage-100 h-screen transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} border-r border-sage-200`}>
+    <div className={`bg-sage-100 fixed left-0 top-0 h-full min-h-screen transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} border-r border-sage-200 flex flex-col z-10`}>
       <div className="p-4">
         <div className="flex items-center justify-between mb-8">
           {!isCollapsed && (

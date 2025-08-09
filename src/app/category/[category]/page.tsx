@@ -59,9 +59,9 @@ export default function CategoryPage() {
 
   if (!isValidCategory) {
     return (
-      <div className="min-h-screen bg-cream-100 flex">
+      <div className="min-h-screen bg-cream-100">
         <Sidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="ml-64 flex flex-col">
           <Navbar onSearch={handleSearch} />
           <main className="flex-1 p-6">
             <div className="max-w-7xl mx-auto">
@@ -80,9 +80,9 @@ export default function CategoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream-100 flex">
+      <div className="min-h-screen bg-cream-100">
         <Sidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="ml-64 flex flex-col">
           <Navbar onSearch={handleSearch} />
           <main className="flex-1 p-6">
             <div className="max-w-7xl mx-auto">
@@ -100,9 +100,9 @@ export default function CategoryPage() {
   const categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
 
   return (
-    <div className="min-h-screen bg-cream-100 flex">
+    <div className="min-h-screen bg-cream-100">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="ml-64 flex flex-col">
         <Navbar onSearch={handleSearch} />
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">

@@ -43,12 +43,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-cream-100 flex">
+    <div className="min-h-screen bg-cream-100">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="ml-64 flex flex-col">
         {/* Navbar */}
         <Navbar onSearch={handleSearch} />
 
