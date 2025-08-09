@@ -1,203 +1,214 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { supabase, Recipe } from '@/lib/supabase'
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { supabase, Recipe } from "@/lib/supabase";
 
 interface RecipeFormProps {
-  onRecipeAdded?: () => void
-  onRecipeUpdated?: () => void
-  onCancel?: () => void
-  recipe?: Recipe // For editing mode
-  isEditMode?: boolean
+  onRecipeAdded?: () => void;
+  onRecipeUpdated?: () => void;
+  onCancel?: () => void;
+  recipe?: Recipe; // For editing mode
+  isEditMode?: boolean;
 }
 
-export default function RecipeForm({ 
-  onRecipeAdded, 
-  onRecipeUpdated, 
-  onCancel, 
-  recipe, 
-  isEditMode = false 
+export default function RecipeForm({
+  onRecipeAdded,
+  onRecipeUpdated,
+  onCancel,
+  recipe,
+  isEditMode = false,
 }: RecipeFormProps) {
   const [formData, setFormData] = useState({
-    title: '',
-    ingredients: '',
-    directions: '',
-    image_url: '',
-    cook_time: '',
-    servings: ''
-  })
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+    title: "",
+    ingredients: "",
+    directions: "",
+    image_url: "",
+    cook_time: "",
+    servings: "",
+  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form data when editing
   useEffect(() => {
     if (recipe && isEditMode) {
       setFormData({
         title: recipe.title,
-        ingredients: recipe.ingredients.join('\n'),
+        ingredients: recipe.ingredients.join("\n"),
         directions: recipe.directions,
-        image_url: recipe.image_url || '',
-        cook_time: recipe.cook_time?.toString() || '',
-        servings: recipe.servings?.toString() || ''
-      })
+        image_url: recipe.image_url || "",
+        cook_time: recipe.cook_time?.toString() || "",
+        servings: recipe.servings?.toString() || "",
+      });
       // Set image preview if recipe has an image
       if (recipe.image_url) {
-        setImagePreview(recipe.image_url)
+        setImagePreview(recipe.image_url);
       }
     }
-  }, [recipe, isEditMode])
+  }, [recipe, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!supabase) {
-      console.error('Supabase client is missing')
-      alert('Supabase configuration is missing. Please check your environment variables.')
-      return
+      console.error("Supabase client is missing");
+      alert(
+        "Supabase configuration is missing. Please check your environment variables."
+      );
+      return;
     }
-    
-    setIsSubmitting(true)
+
+    setIsSubmitting(true);
 
     try {
       const ingredientsArray = formData.ingredients
-        .split('\n')
-        .map(ingredient => ingredient.trim())
-        .filter(ingredient => ingredient.length > 0)
+        .split("\n")
+        .map((ingredient) => ingredient.trim())
+        .filter((ingredient) => ingredient.length > 0);
 
       // Use the image preview (data URL) if an image was uploaded
-      const imageUrl = imagePreview || formData.image_url || null
+      const imageUrl = imagePreview || formData.image_url || null;
 
       if (isEditMode && recipe) {
         // Update existing recipe
-        console.log('Attempting to update recipe:', recipe.id, { formData, imageUrl })
-        
+        console.log("Attempting to update recipe:", recipe.id, {
+          formData,
+          imageUrl,
+        });
+
         // First, let's verify the recipe exists
         const { data: existingRecipe, error: fetchError } = await supabase
-          .from('recipes')
-          .select('*')
-          .eq('id', recipe.id)
-          .single()
+          .from("recipes")
+          .select("*")
+          .eq("id", recipe.id)
+          .single();
 
         if (fetchError) {
-          console.error('Error fetching recipe before update:', fetchError)
-          throw fetchError
+          console.error("Error fetching recipe before update:", fetchError);
+          throw fetchError;
         }
 
-        console.log('Recipe found before update:', existingRecipe)
-        
+        console.log("Recipe found before update:", existingRecipe);
+
         const { error } = await supabase
-          .from('recipes')
+          .from("recipes")
           .update({
             title: formData.title,
             ingredients: ingredientsArray,
             directions: formData.directions,
             image_url: imageUrl,
             cook_time: formData.cook_time ? parseInt(formData.cook_time) : null,
-            servings: formData.servings ? parseInt(formData.servings) : null
+            servings: formData.servings ? parseInt(formData.servings) : null,
           })
-          .eq('id', recipe.id)
+          .eq("id", recipe.id);
 
         if (error) {
-          console.error('Supabase update error:', error)
-          throw error
+          console.error("Supabase update error:", error);
+          throw error;
         }
 
-        console.log('Recipe updated successfully')
-        
+        console.log("Recipe updated successfully");
+
         // Verify update
         const { data: updatedRecipe, error: verifyError } = await supabase
-          .from('recipes')
-          .select('*')
-          .eq('id', recipe.id)
-          .single()
+          .from("recipes")
+          .select("*")
+          .eq("id", recipe.id)
+          .single();
 
         if (verifyError) {
-          console.error('Error verifying update:', verifyError)
+          console.error("Error verifying update:", verifyError);
         } else {
-          console.log('Recipe after update:', updatedRecipe)
+          console.log("Recipe after update:", updatedRecipe);
         }
-        
-        onRecipeUpdated?.()
-        alert('Recipe updated successfully!')
+
+        onRecipeUpdated?.();
+        alert("Recipe updated successfully!");
       } else {
         // Add new recipe
-        console.log('Attempting to add new recipe:', { formData, imageUrl })
-        const { error } = await supabase
-          .from('recipes')
-          .insert([
-            {
-              title: formData.title,
-              ingredients: ingredientsArray,
-              directions: formData.directions,
-              image_url: imageUrl,
-              cook_time: formData.cook_time ? parseInt(formData.cook_time) : null,
-              servings: formData.servings ? parseInt(formData.servings) : null
-            }
-          ])
+        console.log("Attempting to add new recipe:", { formData, imageUrl });
+        const { error } = await supabase.from("recipes").insert([
+          {
+            title: formData.title,
+            ingredients: ingredientsArray,
+            directions: formData.directions,
+            image_url: imageUrl,
+            cook_time: formData.cook_time ? parseInt(formData.cook_time) : null,
+            servings: formData.servings ? parseInt(formData.servings) : null,
+          },
+        ]);
 
         if (error) {
-          console.error('Supabase insert error:', error)
-          throw error
+          console.error("Supabase insert error:", error);
+          throw error;
         }
 
-        console.log('Recipe added successfully')
+        console.log("Recipe added successfully");
 
         // Reset form only for new recipes
         setFormData({
-          title: '',
-          ingredients: '',
-          directions: '',
-          image_url: '',
-          cook_time: '',
-          servings: ''
-        })
-        setImageFile(null)
-        setImagePreview('')
+          title: "",
+          ingredients: "",
+          directions: "",
+          image_url: "",
+          cook_time: "",
+          servings: "",
+        });
+        setImageFile(null);
+        setImagePreview("");
 
-        onRecipeAdded?.()
-        alert('Recipe added successfully!')
+        onRecipeAdded?.();
+        alert("Recipe added successfully!");
       }
     } catch (error) {
-      console.error('Error saving recipe:', error)
-      alert(`Error ${isEditMode ? 'updating' : 'adding'} recipe. Please try again.`)
+      console.error("Error saving recipe:", error);
+      alert(
+        `Error ${isEditMode ? "updating" : "adding"} recipe. Please try again.`
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file)
-      
+      setImageFile(file);
+
       // Create preview
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const removeImage = () => {
-    setImageFile(null)
-    setImagePreview('')
-    setFormData({ ...formData, image_url: '' })
-  }
+    setImageFile(null);
+    setImagePreview("");
+    setFormData({ ...formData, image_url: "" });
+  };
 
   return (
     <div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-sage-900 mb-1">
+          <label
+            htmlFor="title"
+            className="block text-sm font-medium text-sage-900 mb-1"
+          >
             Recipe Title *
           </label>
           <input
@@ -213,7 +224,10 @@ export default function RecipeForm({
         </div>
 
         <div>
-          <label htmlFor="ingredients" className="block text-sm font-medium text-sage-900 mb-1">
+          <label
+            htmlFor="ingredients"
+            className="block text-sm font-medium text-sage-900 mb-1"
+          >
             Ingredients * (one per line)
           </label>
           <textarea
@@ -229,7 +243,10 @@ export default function RecipeForm({
         </div>
 
         <div>
-          <label htmlFor="directions" className="block text-sm font-medium text-sage-900 mb-1">
+          <label
+            htmlFor="directions"
+            className="block text-sm font-medium text-sage-900 mb-1"
+          >
             Directions *
           </label>
           <textarea
@@ -248,14 +265,15 @@ export default function RecipeForm({
           <label className="block text-sm font-medium text-sage-900 mb-1">
             Recipe Image (optional)
           </label>
-          
+
           {/* Image Preview */}
           {imagePreview && (
             <div className="mb-3 relative">
-              <img
+              <Image
                 src={imagePreview}
                 alt="Recipe preview"
                 className="w-full h-32 object-cover rounded-md border border-sage-300"
+                fill
               />
               <button
                 type="button"
@@ -266,7 +284,7 @@ export default function RecipeForm({
               </button>
             </div>
           )}
-          
+
           {/* File Upload */}
           <div className="border-2 border-dashed border-sage-300 rounded-md p-4 text-center hover:border-sage-400 transition-colors">
             <input
@@ -278,11 +296,25 @@ export default function RecipeForm({
             />
             <label htmlFor="image_upload" className="cursor-pointer">
               <div className="flex flex-col items-center">
-                <svg className="w-8 h-8 text-sage-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <svg
+                  className="w-8 h-8 text-sage-400 mb-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
-                <span className="text-sm text-sage-600">Click to upload an image</span>
-                <span className="text-xs text-sage-400 mt-1">PNG, JPG, GIF up to 10MB</span>
+                <span className="text-sm text-sage-600">
+                  Click to upload an image
+                </span>
+                <span className="text-xs text-sage-400 mt-1">
+                  PNG, JPG, GIF up to 10MB
+                </span>
               </div>
             </label>
           </div>
@@ -290,7 +322,10 @@ export default function RecipeForm({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="cook_time" className="block text-sm font-medium text-sage-900 mb-1">
+            <label
+              htmlFor="cook_time"
+              className="block text-sm font-medium text-sage-900 mb-1"
+            >
               Cook Time (minutes)
             </label>
             <input
@@ -306,7 +341,10 @@ export default function RecipeForm({
           </div>
 
           <div>
-            <label htmlFor="servings" className="block text-sm font-medium text-sage-900 mb-1">
+            <label
+              htmlFor="servings"
+              className="block text-sm font-medium text-sage-900 mb-1"
+            >
               Servings
             </label>
             <input
@@ -338,7 +376,7 @@ export default function RecipeForm({
               disabled={isSubmitting}
               className="flex-1 bg-sage-600 text-white px-4 py-2 rounded-md hover:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </button>
           </div>
         ) : (
@@ -347,10 +385,10 @@ export default function RecipeForm({
             disabled={isSubmitting}
             className="w-full bg-sage-600 text-white py-2 px-4 rounded-md hover:bg-sage-700 focus:outline-none focus:ring-2 focus:ring-sage-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Adding Recipe...' : 'Add Recipe'}
+            {isSubmitting ? "Adding Recipe..." : "Add Recipe"}
           </button>
         )}
       </form>
     </div>
-  )
+  );
 }
