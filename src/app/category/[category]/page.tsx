@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Recipe, RECIPE_CATEGORIES, RecipeCategory } from "@/lib/supabase";
+import { Recipe, Category, RecipeCategory } from "@/lib/supabase";
 import { RecipeAPI } from "@/lib/api";
+import { CategoryAPI } from "@/lib/categoryApi";
 import RecipeCard from "@/components/RecipeCard";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
@@ -14,37 +15,53 @@ export default function CategoryPage() {
     params.category as string
   ) as RecipeCategory;
 
-  const [categoryRecipes, setCategoryRecipes] = useState<Recipe[]>([]);
-  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
+  const [isValidCategory, setIsValidCategory] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryRecipes, setCategoryRecipes] = useState<Recipe[]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  // Validate category
-  const isValidCategory = RECIPE_CATEGORIES.includes(category);
-
+  // Validate category and fetch data
   useEffect(() => {
-    if (!isValidCategory) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchCategoryRecipes = async () => {
+    const validateAndFetchData = async () => {
       try {
+        // Fetch categories to validate
+        const fetchedCategories = await CategoryAPI.getCategories();
+        setCategories(fetchedCategories);
+
+        // Check if category is valid (exists in database or is 'other')
+        const categoryExists =
+          category === "other" ||
+          fetchedCategories.some(
+            (cat) => cat.name.toLowerCase() === category.toLowerCase()
+          );
+
+        setIsValidCategory(categoryExists);
+
+        if (!categoryExists) {
+          setLoading(false);
+          return;
+        }
+
+        // Fetch recipes for this category
         const allRecipes = await RecipeAPI.getRecipes();
         const recipes = allRecipes.filter(
-          (recipe: Recipe) => recipe.category === category
+          (recipe: Recipe) =>
+            recipe.category?.toLowerCase() === category.toLowerCase()
         );
         setCategoryRecipes(recipes);
         setFilteredRecipes(recipes);
       } catch (error) {
-        console.error("Error fetching category recipes:", error);
+        console.error("Error validating category or fetching recipes:", error);
+        setIsValidCategory(false);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCategoryRecipes();
-  }, [category, isValidCategory]);
+    validateAndFetchData();
+  }, [category]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -62,7 +79,29 @@ export default function CategoryPage() {
     }
   };
 
-  if (!isValidCategory) {
+  // Show loading state while validating/fetching
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cream-100">
+        <Sidebar />
+        <div className="ml-64 flex flex-col">
+          <Navbar onSearch={handleSearch} />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center py-12">
+                <div className="animate-pulse text-sage-500 text-lg">
+                  Loading...
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Show invalid category message if validation failed
+  if (isValidCategory === false) {
     return (
       <div className="min-h-screen bg-cream-100">
         <Sidebar />
@@ -77,26 +116,6 @@ export default function CategoryPage() {
                 <p className="text-sage-400">
                   The category &quot;{category}&quot; does not exist.
                 </p>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-cream-100">
-        <Sidebar />
-        <div className="ml-64 flex flex-col">
-          <Navbar onSearch={handleSearch} />
-          <main className="flex-1 p-6">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center py-12">
-                <div className="text-sage-500 text-lg">
-                  Loading {category} recipes...
-                </div>
               </div>
             </div>
           </main>

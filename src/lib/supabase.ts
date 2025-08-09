@@ -60,7 +60,8 @@ export const testDatabaseConnection = async () => {
   }
 };
 
-export const RECIPE_CATEGORIES = [
+// Default categories for initial setup
+export const DEFAULT_RECIPE_CATEGORIES = [
   'cakes',
   'cookies', 
   'pastries',
@@ -72,7 +73,13 @@ export const RECIPE_CATEGORIES = [
   'other'
 ] as const;
 
-export type RecipeCategory = typeof RECIPE_CATEGORIES[number];
+export type Category = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
+export type RecipeCategory = string;
 
 export type Recipe = {
   id: string;
