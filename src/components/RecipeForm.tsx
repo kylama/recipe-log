@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { supabase, Recipe } from "@/lib/supabase";
+import { Recipe, RECIPE_CATEGORIES, RecipeCategory } from "@/lib/supabase";
+import { RecipeAPI } from "@/lib/api";
 
 interface RecipeFormProps {
   onRecipeAdded?: () => void;
@@ -26,6 +27,7 @@ export default function RecipeForm({
     image_url: "",
     cook_time: "",
     servings: "",
+    category: "other" as RecipeCategory,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -41,6 +43,7 @@ export default function RecipeForm({
         image_url: recipe.image_url || "",
         cook_time: recipe.cook_time?.toString() || "",
         servings: recipe.servings?.toString() || "",
+        category: recipe.category || "other",
       });
       // Set image preview if recipe has an image
       if (recipe.image_url) {
@@ -52,13 +55,7 @@ export default function RecipeForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!supabase) {
-      console.error("Supabase client is missing");
-      alert(
-        "Supabase configuration is missing. Please check your environment variables."
-      );
-      return;
-    }
+
 
     setIsSubmitting(true);
 
@@ -78,74 +75,33 @@ export default function RecipeForm({
           imageUrl,
         });
 
-        // First, let's verify the recipe exists
-        const { data: existingRecipe, error: fetchError } = await supabase
-          .from("recipes")
-          .select("*")
-          .eq("id", recipe.id)
-          .single();
+        const updatedRecipe = await RecipeAPI.updateRecipe(recipe.id, {
+          title: formData.title,
+          ingredients: ingredientsArray,
+          directions: formData.directions,
+          image_url: imageUrl || undefined,
+          cook_time: formData.cook_time ? parseInt(formData.cook_time) : undefined,
+          servings: formData.servings ? parseInt(formData.servings) : undefined,
+          category: formData.category,
+        });
 
-        if (fetchError) {
-          console.error("Error fetching recipe before update:", fetchError);
-          throw fetchError;
-        }
-
-        console.log("Recipe found before update:", existingRecipe);
-
-        const { error } = await supabase
-          .from("recipes")
-          .update({
-            title: formData.title,
-            ingredients: ingredientsArray,
-            directions: formData.directions,
-            image_url: imageUrl,
-            cook_time: formData.cook_time ? parseInt(formData.cook_time) : null,
-            servings: formData.servings ? parseInt(formData.servings) : null,
-          })
-          .eq("id", recipe.id);
-
-        if (error) {
-          console.error("Supabase update error:", error);
-          throw error;
-        }
-
-        console.log("Recipe updated successfully");
-
-        // Verify update
-        const { data: updatedRecipe, error: verifyError } = await supabase
-          .from("recipes")
-          .select("*")
-          .eq("id", recipe.id)
-          .single();
-
-        if (verifyError) {
-          console.error("Error verifying update:", verifyError);
-        } else {
-          console.log("Recipe after update:", updatedRecipe);
-        }
-
+        console.log("Recipe updated successfully:", updatedRecipe);
         onRecipeUpdated?.();
         alert("Recipe updated successfully!");
       } else {
         // Add new recipe
         console.log("Attempting to add new recipe:", { formData, imageUrl });
-        const { error } = await supabase.from("recipes").insert([
-          {
-            title: formData.title,
-            ingredients: ingredientsArray,
-            directions: formData.directions,
-            image_url: imageUrl,
-            cook_time: formData.cook_time ? parseInt(formData.cook_time) : null,
-            servings: formData.servings ? parseInt(formData.servings) : null,
-          },
-        ]);
+        const newRecipe = await RecipeAPI.createRecipe({
+          title: formData.title,
+          ingredients: ingredientsArray,
+          directions: formData.directions,
+          image_url: imageUrl || undefined,
+          cook_time: formData.cook_time ? parseInt(formData.cook_time) : undefined,
+          servings: formData.servings ? parseInt(formData.servings) : undefined,
+          category: formData.category,
+        });
 
-        if (error) {
-          console.error("Supabase insert error:", error);
-          throw error;
-        }
-
-        console.log("Recipe added successfully");
+        console.log("Recipe added successfully:", newRecipe);
 
         // Reset form only for new recipes
         setFormData({
@@ -155,6 +111,7 @@ export default function RecipeForm({
           image_url: "",
           cook_time: "",
           servings: "",
+          category: "other" as RecipeCategory,
         });
         setImageFile(null);
         setImagePreview("");
@@ -162,10 +119,10 @@ export default function RecipeForm({
         onRecipeAdded?.();
         alert("Recipe added successfully!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving recipe:", error);
       alert(
-        `Error ${isEditMode ? "updating" : "adding"} recipe. Please try again.`
+        `Error ${isEditMode ? "updating" : "adding"} recipe: ${error?.message || 'Please try again.'}`
       );
     } finally {
       setIsSubmitting(false);
@@ -173,7 +130,7 @@ export default function RecipeForm({
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setFormData({
       ...formData,
@@ -268,12 +225,13 @@ export default function RecipeForm({
 
           {/* Image Preview */}
           {imagePreview && (
-            <div className="mb-3 relative">
+            <div className="mb-3 relative flex justify-center">
               <Image
                 src={imagePreview}
                 alt="Recipe preview"
-                className="w-full h-32 object-cover rounded-md border border-sage-300"
-                fill
+                width={400}
+                height={300}
+                className="max-w-full h-auto object-contain rounded-md border border-sage-300"
               />
               <button
                 type="button"
@@ -326,7 +284,7 @@ export default function RecipeForm({
               htmlFor="cook_time"
               className="block text-sm font-medium text-sage-900 mb-1"
             >
-              Cook Time (minutes)
+              Cook Time (minutes) *
             </label>
             <input
               type="number"
@@ -334,6 +292,7 @@ export default function RecipeForm({
               name="cook_time"
               value={formData.cook_time}
               onChange={handleChange}
+              required
               min="1"
               className="w-full px-3 py-2 border border-sage-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sage-500 bg-white text-gray-900"
               placeholder="30"
@@ -345,7 +304,7 @@ export default function RecipeForm({
               htmlFor="servings"
               className="block text-sm font-medium text-sage-900 mb-1"
             >
-              Servings
+              Servings *
             </label>
             <input
               type="number"
@@ -353,11 +312,35 @@ export default function RecipeForm({
               name="servings"
               value={formData.servings}
               onChange={handleChange}
+              required
               min="1"
               className="w-full px-3 py-2 border border-sage-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sage-500 bg-white text-gray-900"
               placeholder="4"
             />
           </div>
+        </div>
+
+        {/* Category Selection */}
+        <div>
+          <label
+            htmlFor="category"
+            className="block text-sm font-medium text-sage-900 mb-1"
+          >
+            Category
+          </label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-sage-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sage-500 bg-white text-gray-900"
+          >
+            {RECIPE_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Button layout for edit mode vs add mode */}

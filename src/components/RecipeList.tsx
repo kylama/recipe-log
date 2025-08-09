@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, Recipe } from '@/lib/supabase'
+import { Recipe } from '@/lib/supabase'
+import { RecipeAPI } from '@/lib/api'
 import RecipeCard from './RecipeCard'
 
 interface RecipeListProps {
@@ -17,27 +18,13 @@ export default function RecipeList({ searchQuery = '', refreshTrigger = 0 }: Rec
 
   const fetchRecipes = async () => {
     console.log('Fetching recipes...')
-    if (!supabase) {
-      setError('Supabase configuration is missing. Please check your environment variables.')
-      setLoading(false)
-      return
-    }
-
     try {
-      // Add cache-busting parameter
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Supabase fetch error:', error)
-        throw error
-      }
-
-      console.log('Fetched recipes:', data?.length || 0, 'recipes')
-      console.log('Recipe IDs:', data?.map(r => r.id) || [])
-      setRecipes(data || [])
+      setLoading(true)
+      setError(null)
+      
+      const recipes = await RecipeAPI.getRecipes()
+      console.log('Fetched recipes:', recipes)
+      setRecipes(recipes || [])
     } catch (error) {
       console.error('Error fetching recipes:', error)
       setError('Failed to load recipes. Please try again later.')
@@ -55,9 +42,9 @@ export default function RecipeList({ searchQuery = '', refreshTrigger = 0 }: Rec
     if (!searchQuery.trim()) {
       setFilteredRecipes(recipes)
     } else {
-      const filtered = recipes.filter(recipe =>
+      const filtered = recipes.filter((recipe: Recipe) =>
         recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recipe.ingredients.some(ingredient => 
+        recipe.ingredients.some((ingredient: string) => 
           ingredient.toLowerCase().includes(searchQuery.toLowerCase())
         ) ||
         recipe.directions.toLowerCase().includes(searchQuery.toLowerCase())
@@ -66,10 +53,7 @@ export default function RecipeList({ searchQuery = '', refreshTrigger = 0 }: Rec
     }
   }, [recipes, searchQuery])
 
-  const refreshRecipes = () => {
-    console.log('Manual refresh triggered')
-    fetchRecipes()
-  }
+
 
   if (loading) {
     return (
@@ -110,15 +94,8 @@ export default function RecipeList({ searchQuery = '', refreshTrigger = 0 }: Rec
 
   return (
     <div>
-      {/* Manual refresh button for debugging */}
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4">
         <h2 className="text-xl font-semibold text-sage-900">Recipes ({displayRecipes.length})</h2>
-        <button
-          onClick={refreshRecipes}
-          className="bg-sage-600 text-white px-3 py-1 rounded-md hover:bg-sage-700 transition-colors text-sm"
-        >
-          Refresh
-        </button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

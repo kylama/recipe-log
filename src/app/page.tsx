@@ -42,12 +42,6 @@ export default function Home() {
     setSearchQuery(query);
   };
 
-  // // Function to trigger refresh from other components
-  // const triggerRefresh = () => {
-  //   console.log('Triggering refresh from home page...')
-  //   setRefreshKey(prev => prev + 1)
-  // }
-
   return (
     <div className="min-h-screen bg-cream-100 flex">
       {/* Sidebar */}

@@ -60,13 +60,29 @@ export const testDatabaseConnection = async () => {
   }
 };
 
+export const RECIPE_CATEGORIES = [
+  'cakes',
+  'cookies', 
+  'pastries',
+  'other desserts',
+  'breakfast',
+  'lunch',
+  'dinner',
+  'drinks',
+  'other'
+] as const;
+
+export type RecipeCategory = typeof RECIPE_CATEGORIES[number];
+
 export type Recipe = {
   id: string;
   title: string;
   ingredients: string[];
   directions: string;
   image_url?: string;
-  cook_time?: number;
-  servings?: number;
+  cook_time: number;
+  servings: number;
+  category: RecipeCategory;
+  is_favorite?: boolean;
   created_at: string;
 };
