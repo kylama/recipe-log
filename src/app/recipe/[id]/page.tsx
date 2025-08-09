@@ -35,7 +35,7 @@ export default function RecipePage() {
     if (params.id) {
       fetchRecipe(params.id as string);
     }
-  }, [params.id]);
+  }, [params.id, fetchRecipe]);
 
   const handleDelete = async () => {
     if (!recipe) {
@@ -53,9 +53,16 @@ export default function RecipePage() {
 
       // Redirect to home page after successful deletion
       router.push("/");
-    } catch (error: any) {
-      console.error("Error deleting recipe:", error);
-      alert(`Error deleting recipe: ${error?.message || "Please try again."}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error deleting recipe:", error);
+        alert(
+          `Error deleting recipe: ${error?.message || "Please try again."}`
+        );
+      } else {
+        console.error("Unknown error:", error);
+        alert("An unknown error occured. Please try again.");
+      }
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -282,8 +289,8 @@ export default function RecipePage() {
                 Delete Recipe
               </h3>
               <p className="text-sage-700 mb-6">
-                Are you sure you want to delete "{recipe.title}"? This action
-                cannot be undone.
+                Are you sure you want to delete &quot;{recipe.title}&quot;? This
+                action cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button

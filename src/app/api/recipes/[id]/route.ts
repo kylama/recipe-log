@@ -4,13 +4,14 @@ import { supabase } from '@/lib/supabase'
 // GET /api/recipes/[id] - Fetch a single recipe
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const { data: recipe, error } = await supabase
       .from('recipes')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) {
@@ -34,8 +35,9 @@ export async function GET(
 // PUT /api/recipes/[id] - Update a recipe
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const body = await request.json()
     const { title, ingredients, directions, image_url, cook_time, servings, category } = body
@@ -59,7 +61,7 @@ export async function PUT(
         servings: servings ? parseInt(servings) : null,
         category: category || 'other',
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -84,13 +86,14 @@ export async function PUT(
 // DELETE /api/recipes/[id] - Delete a recipe
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const { data, error } = await supabase
       .from('recipes')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .select();
 
     if (error) {
@@ -112,8 +115,9 @@ export async function DELETE(
 // PATCH endpoint for updating favorite status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const body = await request.json();
     const { is_favorite } = body;
@@ -125,7 +129,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('recipes')
       .update({ is_favorite })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 

@@ -55,8 +55,6 @@ export default function RecipeForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-
-
     setIsSubmitting(true);
 
     try {
@@ -80,7 +78,9 @@ export default function RecipeForm({
           ingredients: ingredientsArray,
           directions: formData.directions,
           image_url: imageUrl || undefined,
-          cook_time: formData.cook_time ? parseInt(formData.cook_time) : undefined,
+          cook_time: formData.cook_time
+            ? parseInt(formData.cook_time)
+            : undefined,
           servings: formData.servings ? parseInt(formData.servings) : undefined,
           category: formData.category,
         });
@@ -96,7 +96,9 @@ export default function RecipeForm({
           ingredients: ingredientsArray,
           directions: formData.directions,
           image_url: imageUrl || undefined,
-          cook_time: formData.cook_time ? parseInt(formData.cook_time) : undefined,
+          cook_time: formData.cook_time
+            ? parseInt(formData.cook_time)
+            : undefined,
           servings: formData.servings ? parseInt(formData.servings) : undefined,
           category: formData.category,
         });
@@ -119,18 +121,27 @@ export default function RecipeForm({
         onRecipeAdded?.();
         alert("Recipe added successfully!");
       }
-    } catch (error: any) {
-      console.error("Error saving recipe:", error);
-      alert(
-        `Error ${isEditMode ? "updating" : "adding"} recipe: ${error?.message || 'Please try again.'}`
-      );
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error saving recipe:", error);
+        alert(
+          `Error ${isEditMode ? "updating" : "adding"} recipe: ${
+            error?.message || "Please try again."
+          }`
+        );
+      } else {
+        console.error("Unknown error:", error);
+        alert("An unknown error occured. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     setFormData({
       ...formData,

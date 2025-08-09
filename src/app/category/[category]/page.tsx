@@ -1,21 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { Recipe, RECIPE_CATEGORIES, RecipeCategory } from '@/lib/supabase';
-import { RecipeAPI } from '@/lib/api';
-import RecipeCard from '@/components/RecipeCard';
-import Sidebar from '@/components/Sidebar';
-import Navbar from '@/components/Navbar';
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { Recipe, RECIPE_CATEGORIES, RecipeCategory } from "@/lib/supabase";
+import { RecipeAPI } from "@/lib/api";
+import RecipeCard from "@/components/RecipeCard";
+import Sidebar from "@/components/Sidebar";
+import Navbar from "@/components/Navbar";
 
 export default function CategoryPage() {
   const params = useParams();
-  const category = decodeURIComponent(params.category as string) as RecipeCategory;
-  
+  const category = decodeURIComponent(
+    params.category as string
+  ) as RecipeCategory;
+
   const [categoryRecipes, setCategoryRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Validate category
   const isValidCategory = RECIPE_CATEGORIES.includes(category);
@@ -29,11 +31,13 @@ export default function CategoryPage() {
     const fetchCategoryRecipes = async () => {
       try {
         const allRecipes = await RecipeAPI.getRecipes();
-        const recipes = allRecipes.filter((recipe: Recipe) => recipe.category === category);
+        const recipes = allRecipes.filter(
+          (recipe: Recipe) => recipe.category === category
+        );
         setCategoryRecipes(recipes);
         setFilteredRecipes(recipes);
       } catch (error) {
-        console.error('Error fetching category recipes:', error);
+        console.error("Error fetching category recipes:", error);
       } finally {
         setLoading(false);
       }
@@ -47,11 +51,12 @@ export default function CategoryPage() {
     if (!query.trim()) {
       setFilteredRecipes(categoryRecipes);
     } else {
-      const filtered = categoryRecipes.filter((recipe: Recipe) =>
-        recipe.title.toLowerCase().includes(query.toLowerCase()) ||
-        recipe.ingredients.some((ingredient: string) =>
-          ingredient.toLowerCase().includes(query.toLowerCase())
-        )
+      const filtered = categoryRecipes.filter(
+        (recipe: Recipe) =>
+          recipe.title.toLowerCase().includes(query.toLowerCase()) ||
+          recipe.ingredients.some((ingredient: string) =>
+            ingredient.toLowerCase().includes(query.toLowerCase())
+          )
       );
       setFilteredRecipes(filtered);
     }
@@ -66,9 +71,11 @@ export default function CategoryPage() {
           <main className="flex-1 p-6">
             <div className="max-w-7xl mx-auto">
               <div className="text-center py-12">
-                <div className="text-sage-500 text-lg mb-4">Invalid Category</div>
+                <div className="text-sage-500 text-lg mb-4">
+                  Invalid Category
+                </div>
                 <p className="text-sage-400">
-                  The category "{category}" does not exist.
+                  The category &quot;{category}&quot; does not exist.
                 </p>
               </div>
             </div>
@@ -87,7 +94,9 @@ export default function CategoryPage() {
           <main className="flex-1 p-6">
             <div className="max-w-7xl mx-auto">
               <div className="text-center py-12">
-                <div className="text-sage-500 text-lg">Loading {category} recipes...</div>
+                <div className="text-sage-500 text-lg">
+                  Loading {category} recipes...
+                </div>
               </div>
             </div>
           </main>
@@ -117,12 +126,18 @@ export default function CategoryPage() {
 
             {searchQuery && filteredRecipes.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-sage-500 text-lg mb-4">No {category} recipes found</div>
-                <p className="text-sage-400">Try searching with different keywords.</p>
+                <div className="text-sage-500 text-lg mb-4">
+                  No {category} recipes found
+                </div>
+                <p className="text-sage-400">
+                  Try searching with different keywords.
+                </p>
               </div>
             ) : displayRecipes.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-sage-500 text-lg mb-4">No {category} recipes yet</div>
+                <div className="text-sage-500 text-lg mb-4">
+                  No {category} recipes yet
+                </div>
                 <p className="text-sage-400">
                   Add some recipes in the {category} category to see them here.
                 </p>
@@ -134,7 +149,7 @@ export default function CategoryPage() {
                     {categoryTitle} ({displayRecipes.length})
                   </h2>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {displayRecipes.map((recipe) => (
                     <RecipeCard key={recipe.id} recipe={recipe} />
