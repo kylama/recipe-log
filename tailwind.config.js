@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-geist-sans)', 'sans-serif'],
+        heading: ['var(--font-playfair-display)', 'serif'],
+      },
       colors: {
         sage: {
           50: '#f6f7f6',

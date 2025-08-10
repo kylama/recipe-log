@@ -25,7 +25,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
     <nav className="bg-white border-b border-sage-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-sage-900">My Recipes</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-sage-900">My Recipes</h1>
         </div>
 
         <div className="flex-1 max-w-md mx-8">

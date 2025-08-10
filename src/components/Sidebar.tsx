@@ -160,7 +160,9 @@ export default function Sidebar() {
       <div className="p-4">
         <div className="flex items-center justify-between mb-8">
           {!isCollapsed && (
-            <h2 className="text-xl font-bold text-sage-900">Recipe Log</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-sage-900">
+              Recipe Log
+            </h2>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
