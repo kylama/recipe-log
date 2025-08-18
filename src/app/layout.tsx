@@ -21,9 +21,6 @@ const playfairDisplay = Playfair_Display({
 export const metadata: Metadata = {
   title: "Recipe Log",
   description: "Your personal recipe manager",
-  icons: {
-    icon: "/cupcake.ico",
-  },
 };
 
 export default function RootLayout({
