@@ -7,7 +7,8 @@ A simple web app for logging and managing your favorite recipes. Built with Next
 - View a list of recipes
 - Add new recipes
 - Edit and delete recipes
-- User login and private recipe storage
+- List recipes under a category
+- Add and delete new categories
 
 ## Tech Stack
 
